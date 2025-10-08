@@ -51,7 +51,7 @@ const About = () => {
       {/* Header Section */}
       <Box sx={{ textAlign: 'center', mb: 8 }}>
         <Typography variant="h2" component="h1" gutterBottom>
-          About <Box component="span" sx={{ color: 'primary.main' }}>UNBOT</Box>
+          About <Box component="span" sx={{ color: 'primary.main' }}>AICPAD</Box>
         </Typography>
         <Typography variant="h5" color="text.secondary" sx={{ maxWidth: 800, mx: 'auto' }}>
           We're on a mission to make the internet safer by protecting applications
@@ -75,7 +75,7 @@ const About = () => {
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
               In today's digital landscape, automated bots pose a significant threat to
-              applications and user experiences. UNBOT was created to provide developers
+              applications and user experiences. AICPAD was created to provide developers
               with powerful, easy-to-implement solutions that detect and prevent bot
               activities while maintaining seamless user experiences.
             </Typography>

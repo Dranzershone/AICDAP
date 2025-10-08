@@ -9,7 +9,7 @@ const Dashboard = () => {
           Dashboard
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Welcome to the UNBOT admin panel. Manage your bot detection system
+          Welcome to the AICPAD admin panel. Manage your bot detection system
           from here.
         </Typography>
       </Box>

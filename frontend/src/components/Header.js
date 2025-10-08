@@ -149,7 +149,7 @@ const Header = () => {
               },
             }}
           >
-            UNBOT
+            AICPAD
           </Typography>
 
           {/* Desktop Navigation */}

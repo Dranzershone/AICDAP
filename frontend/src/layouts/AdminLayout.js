@@ -63,7 +63,7 @@ const AdminLayout = ({ children }) => {
           }}
           onClick={() => navigate('/')}
         >
-          UNBOT Admin
+          AICPAD Admin
         </Typography>
       </Toolbar>
       <Divider />

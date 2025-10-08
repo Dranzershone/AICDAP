@@ -118,7 +118,7 @@ const Home = () => {
               >
                 <CheckCircle sx={{ color: "success.main", fontSize: 20 }} />
                 <Typography variant="body2" color="text.secondary">
-                  Beta release date June 30th, 2023
+                  Beta release 
                 </Typography>
               </Box>
             </Box>
@@ -219,7 +219,7 @@ const Home = () => {
             color="text.secondary"
             sx={{ mb: 4, maxWidth: 500, mx: "auto" }}
           >
-            Join thousands of developers who trust UNBOT to protect their
+            Join thousands of developers who trust AICPAD to protect their
             applications from automated threats.
           </Typography>
           <Button
