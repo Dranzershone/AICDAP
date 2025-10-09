@@ -49,6 +49,7 @@ const AdminLayout = ({ children }) => {
     { text: "Users", icon: <People />, path: "/admin/users" },
     { text: "Reports", icon: <Report />, path: "/admin/reports" },
     { text: "Settings", icon: <Settings />, path: "/admin/settings" },
+    
   ];
 
   const drawer = (
