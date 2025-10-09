@@ -17,8 +17,11 @@ import {
   Timeline,
   CheckCircle,
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
+  const navigate = useNavigate();
+
   const features = [
     {
       icon: <Security />,
@@ -92,6 +95,10 @@ const Home = () => {
                       boxShadow: "0 6px 16px rgba(115, 103, 240, 0.4)",
                     },
                   }}
+                  onClick={() => {
+                    console.log("click");
+                    navigate("/admin/dashboard");
+                  }}
                 >
                   Try Demo
                 </Button>
@@ -118,7 +125,7 @@ const Home = () => {
               >
                 <CheckCircle sx={{ color: "success.main", fontSize: 20 }} />
                 <Typography variant="body2" color="text.secondary">
-                  Beta release 
+                  Beta release
                 </Typography>
               </Box>
             </Box>

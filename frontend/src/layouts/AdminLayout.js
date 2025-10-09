@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Box,
   Drawer,
@@ -14,7 +14,7 @@ import {
   IconButton,
   useTheme,
   useMediaQuery,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Menu as MenuIcon,
   Dashboard,
@@ -24,8 +24,9 @@ import {
   People,
   Report,
   Logout,
-} from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
+  Campaign,
+} from "@mui/icons-material";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const drawerWidth = 240;
 
@@ -33,7 +34,7 @@ const AdminLayout = ({ children }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   const handleDrawerToggle = () => {
@@ -41,12 +42,13 @@ const AdminLayout = ({ children }) => {
   };
 
   const menuItems = [
-    { text: 'Dashboard', icon: <Dashboard />, path: '/admin/dashboard' },
-    { text: 'Security', icon: <Security />, path: '/admin/security' },
-    { text: 'Analytics', icon: <Analytics />, path: '/admin/analytics' },
-    { text: 'Users', icon: <People />, path: '/admin/users' },
-    { text: 'Reports', icon: <Report />, path: '/admin/reports' },
-    { text: 'Settings', icon: <Settings />, path: '/admin/settings' },
+    { text: "Dashboard", icon: <Dashboard />, path: "/admin/dashboard" },
+    { text: "Campaigns", icon: <Campaign />, path: "/admin/campaigns" },
+    { text: "Security", icon: <Security />, path: "/admin/security" },
+    { text: "Analytics", icon: <Analytics />, path: "/admin/analytics" },
+    { text: "Users", icon: <People />, path: "/admin/users" },
+    { text: "Reports", icon: <Report />, path: "/admin/reports" },
+    { text: "Settings", icon: <Settings />, path: "/admin/settings" },
   ];
 
   const drawer = (
@@ -58,10 +60,10 @@ const AdminLayout = ({ children }) => {
           component="div"
           sx={{
             fontWeight: 700,
-            color: 'primary.main',
-            cursor: 'pointer',
+            color: "primary.main",
+            cursor: "pointer",
           }}
-          onClick={() => navigate('/')}
+          onClick={() => navigate("/")}
         >
           AICPAD Admin
         </Typography>
@@ -79,22 +81,25 @@ const AdminLayout = ({ children }) => {
                 }
               }}
               sx={{
-                '&.Mui-selected': {
-                  backgroundColor: 'rgba(115, 103, 240, 0.1)',
-                  borderRight: '3px solid',
-                  borderRightColor: 'primary.main',
-                  '&:hover': {
-                    backgroundColor: 'rgba(115, 103, 240, 0.15)',
+                "&.Mui-selected": {
+                  backgroundColor: "rgba(115, 103, 240, 0.1)",
+                  borderRight: "3px solid",
+                  borderRightColor: "primary.main",
+                  "&:hover": {
+                    backgroundColor: "rgba(115, 103, 240, 0.15)",
                   },
                 },
-                '&:hover': {
-                  backgroundColor: 'rgba(115, 103, 240, 0.05)',
+                "&:hover": {
+                  backgroundColor: "rgba(115, 103, 240, 0.05)",
                 },
               }}
             >
               <ListItemIcon
                 sx={{
-                  color: location.pathname === item.path ? 'primary.main' : 'text.secondary',
+                  color:
+                    location.pathname === item.path
+                      ? "primary.main"
+                      : "text.secondary",
                 }}
               >
                 {item.icon}
@@ -102,8 +107,11 @@ const AdminLayout = ({ children }) => {
               <ListItemText
                 primary={item.text}
                 sx={{
-                  '& .MuiListItemText-primary': {
-                    color: location.pathname === item.path ? 'primary.main' : 'text.primary',
+                  "& .MuiListItemText-primary": {
+                    color:
+                      location.pathname === item.path
+                        ? "primary.main"
+                        : "text.primary",
                     fontWeight: location.pathname === item.path ? 600 : 400,
                   },
                 }}
@@ -116,21 +124,21 @@ const AdminLayout = ({ children }) => {
       <List>
         <ListItem disablePadding>
           <ListItemButton
-            onClick={() => navigate('/')}
+            onClick={() => navigate("/")}
             sx={{
-              '&:hover': {
-                backgroundColor: 'rgba(255, 77, 87, 0.05)',
+              "&:hover": {
+                backgroundColor: "rgba(255, 77, 87, 0.05)",
               },
             }}
           >
-            <ListItemIcon sx={{ color: 'error.main' }}>
+            <ListItemIcon sx={{ color: "error.main" }}>
               <Logout />
             </ListItemIcon>
             <ListItemText
               primary="Back to Site"
               sx={{
-                '& .MuiListItemText-primary': {
-                  color: 'error.main',
+                "& .MuiListItemText-primary": {
+                  color: "error.main",
                 },
               }}
             />
@@ -141,16 +149,16 @@ const AdminLayout = ({ children }) => {
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: "flex" }}>
       {/* Admin AppBar */}
       <AppBar
         position="fixed"
         sx={{
           width: { md: `calc(100% - ${drawerWidth}px)` },
           ml: { md: `${drawerWidth}px` },
-          backgroundColor: 'rgba(30, 30, 47, 0.95)',
-          backdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          backgroundColor: "rgba(30, 30, 47, 0.95)",
+          backdropFilter: "blur(20px)",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
         }}
       >
         <Toolbar>
@@ -159,7 +167,7 @@ const AdminLayout = ({ children }) => {
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: 'none' } }}
+            sx={{ mr: 2, display: { md: "none" } }}
           >
             <MenuIcon />
           </IconButton>
@@ -167,7 +175,7 @@ const AdminLayout = ({ children }) => {
             variant="h6"
             noWrap
             component="div"
-            sx={{ flexGrow: 1, color: 'text.primary' }}
+            sx={{ flexGrow: 1, color: "text.primary" }}
           >
             Admin Panel
           </Typography>
@@ -188,12 +196,12 @@ const AdminLayout = ({ children }) => {
             keepMounted: true, // Better open performance on mobile.
           }}
           sx={{
-            display: { xs: 'block', md: 'none' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
+            display: { xs: "block", md: "none" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
               width: drawerWidth,
-              backgroundColor: 'background.paper',
-              borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+              backgroundColor: "background.paper",
+              borderRight: "1px solid rgba(255, 255, 255, 0.1)",
             },
           }}
         >
@@ -204,12 +212,12 @@ const AdminLayout = ({ children }) => {
         <Drawer
           variant="permanent"
           sx={{
-            display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
+            display: { xs: "none", md: "block" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
               width: drawerWidth,
-              backgroundColor: 'background.paper',
-              borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+              backgroundColor: "background.paper",
+              borderRight: "1px solid rgba(255, 255, 255, 0.1)",
             },
           }}
           open
@@ -224,14 +232,12 @@ const AdminLayout = ({ children }) => {
         sx={{
           flexGrow: 1,
           width: { md: `calc(100% - ${drawerWidth}px)` },
-          minHeight: '100vh',
-          backgroundColor: 'background.default',
+          minHeight: "100vh",
+          backgroundColor: "background.default",
         }}
       >
         <Toolbar />
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
+        <Box sx={{ p: 3 }}>{children}</Box>
       </Box>
     </Box>
   );

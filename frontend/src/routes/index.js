@@ -1,6 +1,6 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import { Home, About, Dashboard } from "../pages";
+import { Home, About, Dashboard, Campaigns, CampaignBuilder } from "../pages";
 import AdminLayout from "../layouts/AdminLayout";
 
 // Placeholder components for routes that don't have pages yet
@@ -118,6 +118,33 @@ const AppRoutes = () => {
             <div style={{ padding: "2rem", color: "#fff" }}>
               <h2>Settings</h2>
               <p>Settings page coming soon...</p>
+            </div>
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/admin/campaigns"
+        element={
+          <AdminLayout>
+            <Campaigns />
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/admin/campaigns/create"
+        element={
+          <AdminLayout>
+            <CampaignBuilder />
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/admin/campaigns/:id"
+        element={
+          <AdminLayout>
+            <div style={{ padding: "2rem", color: "#fff" }}>
+              <h2>Campaign Details</h2>
+              <p>Campaign details page coming soon...</p>
             </div>
           </AdminLayout>
         }

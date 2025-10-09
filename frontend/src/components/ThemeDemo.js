@@ -1,4 +1,5 @@
 import React from "react";
+
 import {
   Box,
   Container,
@@ -41,8 +42,16 @@ const ThemeDemo = () => {
         </Typography>
 
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-          <Button variant="contained" size="large" startIcon={<PlayArrow />}>
-            Try Demo
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<PlayArrow />}
+            onClick={() => {
+              console.log("click");
+              //navigate("/admin/dashboard");
+            }}
+          >
+            Try Demoaa
           </Button>
           <Button variant="outlined" size="large">
             Verify you're human
@@ -98,7 +107,7 @@ const ThemeDemo = () => {
                 <Avatar sx={{ bgcolor: "secondary.main", mr: 2 }}>
                   <Speed />
                 </Avatar>
-                <Typography variant="h6">Reporting and Analytics</Typography>
+                <Typography variant="h6">Create a campaign</Typography>
               </Box>
               <Typography variant="body2" color="text.secondary">
                 Comprehensive analytics dashboard with detailed reports and
