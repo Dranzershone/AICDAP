@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -23,6 +23,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  CircularProgress,
+  Alert,
+  Skeleton,
+  Snackbar,
 } from "@mui/material";
 import {
   Add,
@@ -38,15 +42,70 @@ import {
   CheckCircle,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import { CampaignService } from "../../../services/campaignService";
 
 const Campaigns = () => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [campaigns, setCampaigns] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    completed: 0,
+    thisMonth: 0,
+  });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
-  // Mock data for campaigns
-  const campaigns = [
+  // Load campaigns on component mount
+  useEffect(() => {
+    loadCampaigns();
+    loadStats();
+  }, []);
+
+  const loadCampaigns = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { data, error } = await CampaignService.getAllCampaigns();
+      if (error) {
+        setError(`Error loading campaigns: ${error}`);
+      } else {
+        setCampaigns(data || []);
+      }
+    } catch (error) {
+      setError("Unexpected error loading campaigns");
+      console.error("Error loading campaigns:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const { data, error } = await CampaignService.getCampaignStats();
+      if (!error && data) {
+        setStats({
+          total: data.total,
+          active: data.active,
+          completed: data.completed,
+          thisMonth: data.thisMonth,
+        });
+      }
+    } catch (error) {
+      console.error("Error loading stats:", error);
+    }
+  };
+
+  // Mock data for campaigns (fallback)
+  const mockCampaigns = [
     {
       id: 1,
       name: "Q4 Security Awareness",
@@ -97,15 +156,19 @@ const Campaigns = () => {
     },
   ];
 
-  // Calculate overview stats
-  const totalCampaigns = campaigns.length;
-  const activeCampaigns = campaigns.filter((c) => c.status === "active").length;
-  const totalTargets = campaigns.reduce((sum, c) => sum + c.targets, 0);
+  // Calculate overview stats from real data
+  const totalCampaigns = stats.total;
+  const activeCampaigns = stats.active;
+  const totalTargets = campaigns.reduce(
+    (sum, c) => sum + (c.total_targets || 0),
+    0,
+  );
   const averageClickRate =
-    campaigns.length > 0
+    campaigns.length > 0 && totalTargets > 0
       ? Math.round(
-          campaigns.reduce((sum, c) => sum + (c.clicked / c.targets) * 100, 0) /
-            campaigns.length,
+          (campaigns.reduce((sum, c) => sum + (c.total_clicked || 0), 0) /
+            totalTargets) *
+            100,
         )
       : 0;
 
@@ -117,6 +180,40 @@ const Campaigns = () => {
   const handleMenuClose = () => {
     setAnchorEl(null);
     setSelectedCampaign(null);
+  };
+
+  const handleDeleteCampaign = async () => {
+    if (!selectedCampaign) return;
+
+    try {
+      const { error } = await CampaignService.deleteCampaign(
+        selectedCampaign.id,
+      );
+      if (error) {
+        setSnackbar({
+          open: true,
+          message: `Error deleting campaign: ${error}`,
+          severity: "error",
+        });
+      } else {
+        setCampaigns(campaigns.filter((c) => c.id !== selectedCampaign.id));
+        setSnackbar({
+          open: true,
+          message: "Campaign deleted successfully",
+          severity: "success",
+        });
+        loadStats(); // Refresh stats
+      }
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: "Unexpected error deleting campaign",
+        severity: "error",
+      });
+    } finally {
+      setShowDeleteDialog(false);
+      handleMenuClose();
+    }
   };
 
   const getStatusColor = (status) => {
@@ -206,7 +303,9 @@ const Campaigns = () => {
                   <Email />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">{totalCampaigns}</Typography>
+                  <Typography variant="h6">
+                    {loading ? <Skeleton width={40} /> : totalCampaigns}
+                  </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Total Campaigns
                   </Typography>
@@ -224,7 +323,9 @@ const Campaigns = () => {
                   <PlayArrow />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">{activeCampaigns}</Typography>
+                  <Typography variant="h6">
+                    {loading ? <Skeleton width={40} /> : activeCampaigns}
+                  </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Active Campaigns
                   </Typography>
@@ -243,7 +344,11 @@ const Campaigns = () => {
                 </Avatar>
                 <Box>
                   <Typography variant="h6">
-                    {totalTargets.toLocaleString()}
+                    {loading ? (
+                      <Skeleton width={60} />
+                    ) : (
+                      totalTargets.toLocaleString()
+                    )}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Total Targets
@@ -262,7 +367,9 @@ const Campaigns = () => {
                   <TrendingUp />
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">{averageClickRate}%</Typography>
+                  <Typography variant="h6">
+                    {loading ? <Skeleton width={50} /> : `${averageClickRate}%`}
+                  </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Avg Click Rate
                   </Typography>
@@ -291,116 +398,176 @@ const Campaigns = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {campaigns.map((campaign) => (
-                <TableRow key={campaign.id} hover>
-                  <TableCell>
-                    <Box>
-                      <Typography variant="subtitle2" gutterBottom>
-                        {campaign.name}
-                      </Typography>
-                      <Chip
-                        label={campaign.difficulty}
-                        size="small"
-                        color={getDifficultyColor(campaign.difficulty)}
-                        variant="outlined"
-                      />
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">{campaign.template}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      icon={getStatusIcon(campaign.status)}
-                      label={
-                        campaign.status.charAt(0).toUpperCase() +
-                        campaign.status.slice(1)
-                      }
-                      color={getStatusColor(campaign.status)}
-                      variant="outlined"
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ width: 100 }}>
-                      <LinearProgress
-                        variant="determinate"
-                        value={campaign.progress}
-                        sx={{ mb: 1 }}
-                      />
-                      <Typography variant="caption" color="text.secondary">
-                        {campaign.progress}%
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">{campaign.targets}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Box>
-                      <Typography
-                        variant="body2"
-                        color={
-                          campaign.clicked > 0 ? "warning.main" : "text.primary"
-                        }
+              {loading ? (
+                Array.from({ length: 3 }).map((_, index) => (
+                  <TableRow key={index}>
+                    {Array.from({ length: 9 }).map((_, colIndex) => (
+                      <TableCell key={colIndex}>
+                        <Skeleton variant="text" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : campaigns.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} sx={{ textAlign: "center", py: 4 }}>
+                    {error ? (
+                      <Alert
+                        severity="error"
+                        sx={{ maxWidth: 400, mx: "auto" }}
                       >
-                        {campaign.clicked}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {campaign.targets > 0
-                          ? Math.round(
-                              (campaign.clicked / campaign.targets) * 100,
-                            )
-                          : 0}
-                        %
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Box>
-                      <Typography
-                        variant="body2"
-                        color={
-                          campaign.reported > 0
-                            ? "success.main"
-                            : "text.primary"
-                        }
-                      >
-                        {campaign.reported}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {campaign.targets > 0
-                          ? Math.round(
-                              (campaign.reported / campaign.targets) * 100,
-                            )
-                          : 0}
-                        %
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" color="text.secondary">
-                      {new Date(campaign.createdAt).toLocaleDateString()}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton
-                      onClick={() =>
-                        navigate(`/admin/campaigns/${campaign.id}`)
-                      }
-                      size="small"
-                    >
-                      <Visibility />
-                    </IconButton>
-                    <IconButton
-                      onClick={(e) => handleMenuOpen(e, campaign)}
-                      size="small"
-                    >
-                      <MoreVert />
-                    </IconButton>
+                        {error}
+                        <Button onClick={loadCampaigns} sx={{ ml: 2 }}>
+                          Retry
+                        </Button>
+                      </Alert>
+                    ) : (
+                      <Box>
+                        <Typography
+                          variant="body1"
+                          color="text.secondary"
+                          gutterBottom
+                        >
+                          No campaigns found
+                        </Typography>
+                        <Button
+                          variant="contained"
+                          startIcon={<Add />}
+                          onClick={() => navigate("/admin/campaigns/create")}
+                        >
+                          Create Your First Campaign
+                        </Button>
+                      </Box>
+                    )}
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                campaigns.map((campaign) => {
+                  const progress =
+                    campaign.total_targets > 0
+                      ? Math.round(
+                          (campaign.total_sent / campaign.total_targets) * 100,
+                        )
+                      : 0;
+
+                  return (
+                    <TableRow key={campaign.id} hover>
+                      <TableCell>
+                        <Box>
+                          <Typography variant="subtitle2" gutterBottom>
+                            {campaign.name}
+                          </Typography>
+                          {campaign.template_name && (
+                            <Chip
+                              label={campaign.template_name}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                            />
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {campaign.template_name || "Custom Template"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          icon={getStatusIcon(campaign.status)}
+                          label={
+                            campaign.status.charAt(0).toUpperCase() +
+                            campaign.status.slice(1)
+                          }
+                          color={getStatusColor(campaign.status)}
+                          variant="outlined"
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ width: 100 }}>
+                          <LinearProgress
+                            variant="determinate"
+                            value={progress}
+                            sx={{ mb: 1 }}
+                          />
+                          <Typography variant="caption" color="text.secondary">
+                            {progress}%
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {campaign.total_targets || 0}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Box>
+                          <Typography
+                            variant="body2"
+                            color={
+                              (campaign.total_clicked || 0) > 0
+                                ? "warning.main"
+                                : "text.primary"
+                            }
+                          >
+                            {campaign.total_clicked || 0}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {campaign.total_targets > 0
+                              ? Math.round(
+                                  ((campaign.total_clicked || 0) /
+                                    campaign.total_targets) *
+                                    100,
+                                )
+                              : 0}
+                            %
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box>
+                          <Typography
+                            variant="body2"
+                            color={
+                              (campaign.total_reported || 0) > 0
+                                ? "success.main"
+                                : "text.primary"
+                            }
+                          >
+                            {campaign.total_reported || 0}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {campaign.total_targets > 0
+                              ? Math.round(
+                                  ((campaign.total_reported || 0) /
+                                    campaign.total_targets) *
+                                    100,
+                                )
+                              : 0}
+                            %
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {campaign.created_at
+                            ? new Date(campaign.created_at).toLocaleDateString()
+                            : "N/A"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => handleMenuOpen(e, campaign)}
+                        >
+                          <MoreVert />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -463,16 +630,26 @@ const Campaigns = () => {
           <Button
             color="error"
             variant="contained"
-            onClick={() => {
-              // Handle delete
-              setShowDeleteDialog(false);
-              handleMenuClose();
-            }}
+            onClick={handleDeleteCampaign}
           >
             Delete
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

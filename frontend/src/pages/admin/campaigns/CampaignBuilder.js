@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -23,6 +23,10 @@ import {
   Avatar,
   IconButton,
   LinearProgress,
+  CircularProgress,
+  Alert,
+  Skeleton,
+  TextField,
 } from "@mui/material";
 import {
   Groups,
@@ -36,6 +40,8 @@ import {
   Edit,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import { EmployeeService } from "../../../services/employeeService";
+import { CampaignService } from "../../../services/campaignService";
 
 const CampaignBuilder = () => {
   const navigate = useNavigate();
@@ -46,73 +52,81 @@ const CampaignBuilder = () => {
   const [showTargetDialog, setShowTargetDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [showLaunchDialog, setShowLaunchDialog] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [employees, setEmployees] = useState([]);
+  const [templates, setTemplates] = useState([]);
+  const [campaignData, setCampaignData] = useState({
+    name: "",
+    description: "",
+  });
 
   const steps = ["Select Targets", "Select Template", "Launch Campaign"];
 
-  // Mock data for targets/departments
-  const departments = [
-    {
-      id: 1,
-      name: "Engineering",
-      employees: 45,
-      description: "Software development team",
-    },
-    {
-      id: 2,
-      name: "Marketing",
-      employees: 23,
-      description: "Marketing and communications",
-    },
-    {
-      id: 3,
-      name: "HR",
-      employees: 12,
-      description: "Human resources department",
-    },
-    {
-      id: 4,
-      name: "Sales",
-      employees: 34,
-      description: "Sales and business development",
-    },
-    {
-      id: 5,
-      name: "Finance",
-      employees: 18,
-      description: "Accounting and finance",
-    },
-  ];
+  // Load departments and employees on component mount
+  useEffect(() => {
+    loadDepartmentsAndEmployees();
+  }, []);
 
-  // Mock data for email templates
-  const templates = [
-    {
-      id: 1,
-      name: "Google Login Phishing",
-      type: "Social Engineering",
-      difficulty: "Medium",
-      description: "Fake Google login page to test credential awareness",
-      preview:
-        "You have new messages in your Google account. Please log in to view them.",
-    },
-    {
-      id: 2,
-      name: "GitHub Security Alert",
-      type: "Security Alert",
-      difficulty: "High",
-      description: "Simulated security breach notification",
-      preview:
-        "Suspicious activity detected on your GitHub account. Immediate action required.",
-    },
-    {
-      id: 3,
-      name: "Microsoft Office Update",
-      type: "Software Update",
-      difficulty: "Low",
-      description: "Fake software update notification",
-      preview:
-        "Microsoft Office requires an urgent security update. Click to download.",
-    },
-  ];
+  const loadDepartmentsAndEmployees = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Get all employees
+      const { data: employeeData, error: employeeError } =
+        await EmployeeService.getAllEmployees();
+
+      if (employeeError) {
+        setError(`Error loading employees: ${employeeError}`);
+        return;
+      }
+
+      setEmployees(employeeData || []);
+
+      // Group employees by department and create department objects
+      const departmentMap = {};
+      (employeeData || []).forEach((employee) => {
+        const dept = employee.department || "Unassigned";
+        if (!departmentMap[dept]) {
+          departmentMap[dept] = {
+            id: dept.toLowerCase().replace(/\s+/g, "_"),
+            name: dept,
+            employees: [],
+            employeeCount: 0,
+            description: `${dept} department`,
+          };
+        }
+        departmentMap[dept].employees.push(employee);
+        departmentMap[dept].employeeCount++;
+      });
+
+      // Convert to array and sort by employee count
+      const departmentList = Object.values(departmentMap).sort(
+        (a, b) => b.employeeCount - a.employeeCount,
+      );
+      setDepartments(departmentList);
+    } catch (error) {
+      setError("Unexpected error loading department data");
+      console.error("Error loading departments:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load templates
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      const { data, error } = await CampaignService.getTemplates();
+      if (error) {
+        setError("Error loading templates");
+      } else {
+        setTemplates(data || []);
+      }
+    };
+    fetchTemplates();
+  }, []);
 
   const handleTargetSelect = (department) => {
     const isSelected = selectedTargets.find((t) => t.id === department.id);
@@ -131,13 +145,59 @@ const CampaignBuilder = () => {
     }
   };
 
-  const handleLaunchCampaign = () => {
-    setCampaignLaunched(true);
-    setShowLaunchDialog(false);
-    // Simulate campaign launch
-    setTimeout(() => {
-      navigate("/admin/campaigns");
-    }, 3000);
+  const handleLaunchCampaign = async () => {
+    try {
+      // 1. Create the campaign in the database first
+      const campaignName =
+        campaignData.name ||
+        `Campaign ${new Date().toLocaleDateString()} - ${selectedTemplate?.name}`;
+      const newCampaignData = {
+        name: campaignName,
+        description:
+          campaignData.description ||
+          `Phishing simulation using ${selectedTemplate?.name} template`,
+        template_id: selectedTemplate?.template_id,
+        template_name: selectedTemplate?.name,
+        status: "draft", // Start as draft
+        total_targets: selectedTargets.reduce(
+          (acc, dept) => acc + dept.employeeCount,
+          0,
+        ),
+        targets: selectedTargets,
+      };
+
+      const { data: createdCampaign, error: createError } =
+        await CampaignService.createCampaign(newCampaignData);
+
+      if (createError) {
+        console.error("Error creating campaign:", createError);
+        alert("Failed to create campaign. Please try again.");
+        return;
+      }
+
+      // 2. Launch the campaign using the backend API
+      const { error: launchError } = await CampaignService.launchCampaign({
+        campaign_id: createdCampaign.id,
+        name: createdCampaign.name,
+        template_id: createdCampaign.template_id,
+      });
+
+      if (launchError) {
+        console.error("Error launching campaign:", launchError);
+        alert(`Failed to launch campaign: ${launchError}`);
+        return;
+      }
+
+      setCampaignLaunched(true);
+      setShowLaunchDialog(false);
+
+      setTimeout(() => {
+        navigate("/admin/campaigns");
+      }, 3000);
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      alert("An unexpected error occurred. Please try again.");
+    }
   };
 
   const getDifficultyColor = (difficulty) => {
@@ -162,7 +222,7 @@ const CampaignBuilder = () => {
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
           Emails are being sent to{" "}
-          {selectedTargets.reduce((acc, dept) => acc + dept.employees, 0)}{" "}
+          {selectedTargets.reduce((acc, dept) => acc + dept.employeeCount, 0)}{" "}
           employees across {selectedTargets.length} departments using the "
           {selectedTemplate?.name}" template.
         </Typography>
@@ -225,7 +285,7 @@ const CampaignBuilder = () => {
             <Card
               sx={{
                 height: 200,
-                cursor: "pointer",
+                cursor: loading ? "not-allowed" : "pointer",
                 border:
                   selectedTargets.length > 0
                     ? "2px solid"
@@ -240,7 +300,7 @@ const CampaignBuilder = () => {
                   backgroundColor: "rgba(30, 30, 47, 0.9)",
                 },
               }}
-              onClick={() => setShowTargetDialog(true)}
+              onClick={() => !loading && setShowTargetDialog(true)}
             >
               <CardContent sx={{ textAlign: "center", p: 3 }}>
                 <Groups sx={{ fontSize: 48, color: "error.main", mb: 2 }} />
@@ -252,12 +312,28 @@ const CampaignBuilder = () => {
                   color="text.secondary"
                   sx={{ mb: 2 }}
                 >
-                  This is used to select a department / employee
+                  {loading
+                    ? "Loading departments..."
+                    : "Select departments to target"}
                 </Typography>
-                {selectedTargets.length > 0 && (
+                {loading ? (
+                  <CircularProgress size={20} sx={{ color: "error.main" }} />
+                ) : selectedTargets.length > 0 ? (
                   <Chip
                     label={`${selectedTargets.length} departments selected`}
                     color="success"
+                    size="small"
+                  />
+                ) : departments.length > 0 ? (
+                  <Chip
+                    label={`${departments.length} departments available`}
+                    color="primary"
+                    size="small"
+                  />
+                ) : (
+                  <Chip
+                    label="No departments found"
+                    color="default"
                     size="small"
                   />
                 )}
@@ -414,27 +490,57 @@ const CampaignBuilder = () => {
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          <List>
-            {departments.map((dept) => (
-              <ListItem key={dept.id} disablePadding>
-                <ListItemButton
-                  selected={selectedTargets.find((t) => t.id === dept.id)}
-                  onClick={() => handleTargetSelect(dept)}
+          {loading ? (
+            <Box
+              sx={{ display: "flex", flexDirection: "column", gap: 1, p: 2 }}
+            >
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Box
+                  key={index}
+                  sx={{ display: "flex", alignItems: "center", gap: 2 }}
                 >
-                  <Avatar sx={{ bgcolor: "primary.main", mr: 2 }}>
-                    <Groups />
-                  </Avatar>
-                  <ListItemText
-                    primary={dept.name}
-                    secondary={`${dept.employees} employees - ${dept.description}`}
-                  />
-                  {selectedTargets.find((t) => t.id === dept.id) && (
-                    <CheckCircle sx={{ color: "success.main" }} />
-                  )}
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
+                  <Skeleton variant="circular" width={40} height={40} />
+                  <Box sx={{ flex: 1 }}>
+                    <Skeleton variant="text" width="60%" />
+                    <Skeleton variant="text" width="80%" />
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          ) : error ? (
+            <Alert severity="error" sx={{ m: 2 }}>
+              {error}
+              <Button onClick={loadDepartmentsAndEmployees} sx={{ ml: 2 }}>
+                Retry
+              </Button>
+            </Alert>
+          ) : departments.length === 0 ? (
+            <Alert severity="info" sx={{ m: 2 }}>
+              No departments found. Please add some employees first.
+            </Alert>
+          ) : (
+            <List>
+              {departments.map((dept) => (
+                <ListItem key={dept.id} disablePadding>
+                  <ListItemButton
+                    selected={selectedTargets.find((t) => t.id === dept.id)}
+                    onClick={() => handleTargetSelect(dept)}
+                  >
+                    <Avatar sx={{ bgcolor: "primary.main", mr: 2 }}>
+                      <Groups />
+                    </Avatar>
+                    <ListItemText
+                      primary={dept.name}
+                      secondary={`${dept.employeeCount} employees - ${dept.description}`}
+                    />
+                    {selectedTargets.find((t) => t.id === dept.id) && (
+                      <CheckCircle sx={{ color: "success.main" }} />
+                    )}
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowTargetDialog(false)}>Cancel</Button>
@@ -568,8 +674,33 @@ const CampaignBuilder = () => {
         <DialogTitle>Launch Campaign</DialogTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 3 }}>
-            Are you ready to launch this phishing simulation campaign?
+            Provide campaign details and launch your phishing simulation.
           </Typography>
+
+          <TextField
+            fullWidth
+            label="Campaign Name"
+            value={campaignData.name}
+            onChange={(e) =>
+              setCampaignData({ ...campaignData, name: e.target.value })
+            }
+            placeholder={`Campaign ${new Date().toLocaleDateString()} - ${selectedTemplate?.name}`}
+            sx={{ mb: 2 }}
+          />
+
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Campaign Description"
+            value={campaignData.description}
+            onChange={(e) =>
+              setCampaignData({ ...campaignData, description: e.target.value })
+            }
+            placeholder={`Phishing simulation using ${selectedTemplate?.name} template targeting ${selectedTargets.length} departments`}
+            sx={{ mb: 3 }}
+          />
+
           <Box sx={{ mb: 2 }}>
             <Typography variant="subtitle2" gutterBottom>
               Campaign Summary:
@@ -579,7 +710,10 @@ const CampaignBuilder = () => {
             </Typography>
             <Typography variant="body2" color="text.secondary">
               • Total Recipients:{" "}
-              {selectedTargets.reduce((acc, dept) => acc + dept.employees, 0)}{" "}
+              {selectedTargets.reduce(
+                (acc, dept) => acc + dept.employeeCount,
+                0,
+              )}{" "}
               employees
             </Typography>
             <Typography variant="body2" color="text.secondary">

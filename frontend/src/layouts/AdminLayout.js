@@ -25,6 +25,7 @@ import {
   Report,
   Logout,
   Campaign,
+  Group,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -44,12 +45,12 @@ const AdminLayout = ({ children }) => {
   const menuItems = [
     { text: "Dashboard", icon: <Dashboard />, path: "/admin/dashboard" },
     { text: "Campaigns", icon: <Campaign />, path: "/admin/campaigns" },
+    { text: "Employees", icon: <Group />, path: "/admin/employees" },
     { text: "Security", icon: <Security />, path: "/admin/security" },
     { text: "Analytics", icon: <Analytics />, path: "/admin/analytics" },
     { text: "Users", icon: <People />, path: "/admin/users" },
     { text: "Reports", icon: <Report />, path: "/admin/reports" },
     { text: "Settings", icon: <Settings />, path: "/admin/settings" },
-    
   ];
 
   const drawer = (

@@ -1,7 +1,16 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import { Home, About, Dashboard, Campaigns, CampaignBuilder } from "../pages";
+import {
+  Home,
+  About,
+  Dashboard,
+  Campaigns,
+  CampaignBuilder,
+  EmployeeManagement,
+} from "../pages";
+import { Login, SignUp, ForgotPassword } from "../pages/auth";
 import AdminLayout from "../layouts/AdminLayout";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 // Placeholder components for routes that don't have pages yet
 const UserGuide = () => (
@@ -15,20 +24,6 @@ const Pricing = () => (
   <div style={{ padding: "2rem", textAlign: "center", color: "#fff" }}>
     <h2>Pricing</h2>
     <p>Pricing page coming soon...</p>
-  </div>
-);
-
-const Login = () => (
-  <div style={{ padding: "2rem", textAlign: "center", color: "#fff" }}>
-    <h2>Login</h2>
-    <p>Login page coming soon...</p>
-  </div>
-);
-
-const SignUp = () => (
-  <div style={{ padding: "2rem", textAlign: "center", color: "#fff" }}>
-    <h2>Sign Up</h2>
-    <p>Sign up page coming soon...</p>
   </div>
 );
 
@@ -47,106 +42,158 @@ const AppRoutes = () => {
       <Route path="/about" element={<About />} />
       <Route path="/guide" element={<UserGuide />} />
       <Route path="/pricing" element={<Pricing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<SignUp />} />
+      <Route
+        path="/login"
+        element={
+          <ProtectedRoute requireAuth={false}>
+            <Login />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/signup"
+        element={
+          <ProtectedRoute requireAuth={false}>
+            <SignUp />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <ProtectedRoute requireAuth={false}>
+            <ForgotPassword />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Admin Routes */}
       <Route
         path="/admin"
         element={
-          <AdminLayout>
-            <Dashboard />
-          </AdminLayout>
+          <ProtectedRoute>
+            <AdminLayout>
+              <Dashboard />
+            </AdminLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/admin/dashboard"
         element={
-          <AdminLayout>
-            <Dashboard />
-          </AdminLayout>
+          <ProtectedRoute>
+            <AdminLayout>
+              <Dashboard />
+            </AdminLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/admin/security"
         element={
-          <AdminLayout>
-            <div style={{ padding: "2rem", color: "#fff" }}>
-              <h2>Security</h2>
-              <p>Security page coming soon...</p>
-            </div>
-          </AdminLayout>
+          <ProtectedRoute>
+            <AdminLayout>
+              <div style={{ padding: "2rem", color: "#fff" }}>
+                <h2>Security</h2>
+                <p>Security page coming soon...</p>
+              </div>
+            </AdminLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/admin/analytics"
         element={
-          <AdminLayout>
-            <div style={{ padding: "2rem", color: "#fff" }}>
-              <h2>Analytics</h2>
-              <p>Analytics page coming soon...</p>
-            </div>
-          </AdminLayout>
+          <ProtectedRoute>
+            <AdminLayout>
+              <div style={{ padding: "2rem", color: "#fff" }}>
+                <h2>Analytics</h2>
+                <p>Analytics page coming soon...</p>
+              </div>
+            </AdminLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/admin/users"
         element={
-          <AdminLayout>
-            <div style={{ padding: "2rem", color: "#fff" }}>
-              <h2>Users</h2>
-              <p>Users page coming soon...</p>
-            </div>
-          </AdminLayout>
+          <ProtectedRoute>
+            <AdminLayout>
+              <div style={{ padding: "2rem", color: "#fff" }}>
+                <h2>Users</h2>
+                <p>Users page coming soon...</p>
+              </div>
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/employees"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <EmployeeManagement />
+            </AdminLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/admin/reports"
         element={
-          <AdminLayout>
-            <div style={{ padding: "2rem", color: "#fff" }}>
-              <h2>Reports</h2>
-              <p>Reports page coming soon...</p>
-            </div>
-          </AdminLayout>
+          <ProtectedRoute>
+            <AdminLayout>
+              <div style={{ padding: "2rem", color: "#fff" }}>
+                <h2>Reports</h2>
+                <p>Reports page coming soon...</p>
+              </div>
+            </AdminLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/admin/settings"
         element={
-          <AdminLayout>
-            <div style={{ padding: "2rem", color: "#fff" }}>
-              <h2>Settings</h2>
-              <p>Settings page coming soon...</p>
-            </div>
-          </AdminLayout>
+          <ProtectedRoute>
+            <AdminLayout>
+              <div style={{ padding: "2rem", color: "#fff" }}>
+                <h2>Settings</h2>
+                <p>Settings page coming soon...</p>
+              </div>
+            </AdminLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/admin/campaigns"
         element={
-          <AdminLayout>
-            <Campaigns />
-          </AdminLayout>
+          <ProtectedRoute>
+            <AdminLayout>
+              <Campaigns />
+            </AdminLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/admin/campaigns/create"
         element={
-          <AdminLayout>
-            <CampaignBuilder />
-          </AdminLayout>
+          <ProtectedRoute>
+            <AdminLayout>
+              <CampaignBuilder />
+            </AdminLayout>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/admin/campaigns/:id"
         element={
-          <AdminLayout>
-            <div style={{ padding: "2rem", color: "#fff" }}>
-              <h2>Campaign Details</h2>
-              <p>Campaign details page coming soon...</p>
-            </div>
-          </AdminLayout>
+          <ProtectedRoute>
+            <AdminLayout>
+              <div style={{ padding: "2rem", color: "#fff" }}>
+                <h2>Campaign Details</h2>
+                <p>Campaign details page coming soon...</p>
+              </div>
+            </AdminLayout>
+          </ProtectedRoute>
         }
       />
 
