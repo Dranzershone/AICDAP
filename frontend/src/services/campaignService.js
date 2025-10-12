@@ -377,6 +377,29 @@ export class CampaignService {
       return { data: null, error: error.message };
     }
   }
+
+  static async getCampaignAnalytics(campaignIds) {
+    try {
+      const analyticsData = await Promise.all(
+        campaignIds.map(async (campaignId) => {
+          const response = await fetch(
+            `${process.env.REACT_APP_BACKEND_URL}/api/campaigns/${campaignId}/stats`,
+          );
+          if (!response.ok) {
+            throw new Error(
+              `Failed to fetch analytics for campaign ${campaignId}`,
+            );
+          }
+          const data = await response.json();
+          return { campaignId, ...data };
+        }),
+      );
+      return { data: analyticsData, error: null };
+    } catch (error) {
+      console.error("Error fetching campaign analytics:", error);
+      return { data: null, error: error.message };
+    }
+  }
 }
 
 export default CampaignService;

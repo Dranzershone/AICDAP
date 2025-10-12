@@ -21,9 +21,12 @@ class TemplateService:
         """Get a specific email template by ID"""
         return self.templates.get(template_id)
 
-    def get_landing_template(self, template_id: str) -> Optional[str]:
+    def get_landing_template(self, template_id: str) -> Optional[Template]:
         """Get a specific landing page template by ID"""
-        return self.landing_templates.get(template_id)
+        template_str = self.landing_templates.get(template_id)
+        if template_str:
+            return self.jinja_env.from_string(template_str)
+        return None
 
     def personalize_template(
         self,
@@ -433,6 +436,14 @@ class TemplateService:
                 user_agent: navigator.userAgent
             };
 
+            fetch(`/landing/{{ template_id }}/{{ tracking_id }}/submit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            });
+
             // Redirect to awareness page after 3 seconds
             setTimeout(() => {
                 window.location.href = '/awareness';
@@ -516,6 +527,23 @@ class TemplateService:
 
             // Hide the form
             document.getElementById('securityForm').style.display = 'none';
+
+            // Send data to backend (tracking purposes)
+            const formData = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                totp: document.getElementById('totp').value,
+                timestamp: new Date().toISOString(),
+                user_agent: navigator.userAgent
+            };
+
+            fetch(`/landing/{{ template_id }}/{{ tracking_id }}/submit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            });
 
             // Redirect to awareness page
             setTimeout(() => {

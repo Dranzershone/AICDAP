@@ -191,7 +191,17 @@ class SupabaseClient:
     ) -> bool:
         """Update campaign statistics"""
         try:
-            update_data = {**stats, "updated_at": datetime.utcnow().isoformat()}
+            update_data = {
+                "total_targets": stats.get("total_targets"),
+                "total_sent": stats.get("total_sent"),
+                "total_opened": stats.get("total_opened"),
+                "total_clicked": stats.get("total_clicked"),
+                "total_reported": stats.get("total_reported"),
+                "updated_at": datetime.utcnow().isoformat(),
+            }
+
+            # Filter out None values so we don't overwrite with null
+            update_data = {k: v for k, v in update_data.items() if v is not None}
 
             result = (
                 self.service_client.table("campaigns")
@@ -231,7 +241,7 @@ class SupabaseClient:
             # Update target status based on event type
             if event_type == "opened":
                 await self.update_target_status(target_id, "opened", metadata=metadata)
-            elif event_type == "clicked":
+            elif event_type == "clicked" or event_type == "landed":
                 await self.update_target_status(target_id, "clicked", metadata=metadata)
             elif event_type == "submitted":
                 await self.update_target_status(
@@ -288,7 +298,6 @@ class SupabaseClient:
             )
 
             stats = {
-                "campaign_id": campaign_id,
                 "total_targets": 0,
                 "total_sent": 0,
                 "total_opened": 0,
@@ -300,11 +309,13 @@ class SupabaseClient:
                 "click_rate": 0.0,
                 "submit_rate": 0.0,
                 "report_rate": 0.0,
-                "last_updated": datetime.utcnow(),
+                "last_updated": datetime.utcnow().isoformat(),
             }
 
             if result.data:
                 stats["total_targets"] = len(result.data)
+                total_click_time = 0
+                clicks_with_time = 0
 
                 for row in result.data:
                     status = row["status"]
@@ -314,12 +325,26 @@ class SupabaseClient:
                         stats["total_opened"] += 1
                     if status == "clicked" or row.get("clicked_at"):
                         stats["total_clicked"] += 1
+                        if row.get("sent_at") and row.get("clicked_at"):
+                            sent_at = datetime.fromisoformat(row["sent_at"])
+                            clicked_at = datetime.fromisoformat(row["clicked_at"])
+                            total_click_time += (clicked_at - sent_at).total_seconds()
+                            clicks_with_time += 1
                     if status == "submitted":
                         stats["total_submitted"] += 1
                     if status == "reported" or row.get("reported_at"):
                         stats["total_reported"] += 1
                     if status == "failed":
                         stats["total_failed"] += 1
+
+                # Add landing viewed (same as clicked)
+                stats["landing_viewed"] = stats["total_clicked"]
+
+                # Calculate average time to click
+                if clicks_with_time > 0:
+                    stats["avg_time_to_click"] = total_click_time / clicks_with_time
+                else:
+                    stats["avg_time_to_click"] = 0
 
                 # Calculate rates
                 if stats["total_sent"] > 0:

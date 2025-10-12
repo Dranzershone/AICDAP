@@ -7,6 +7,7 @@ import {
   Campaigns,
   CampaignBuilder,
   EmployeeManagement,
+  Analytics,
 } from "../pages";
 import { Login, SignUp, ForgotPassword } from "../pages/auth";
 import AdminLayout from "../layouts/AdminLayout";
@@ -106,10 +107,7 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <AdminLayout>
-              <div style={{ padding: "2rem", color: "#fff" }}>
-                <h2>Analytics</h2>
-                <p>Analytics page coming soon...</p>
-              </div>
+              <Analytics />
             </AdminLayout>
           </ProtectedRoute>
         }

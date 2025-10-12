@@ -262,11 +262,16 @@ async def phishing_landing_page(template_id: str, tracking_id: str):
     """Serve phishing landing pages"""
     try:
         # Record landing page visit
-        await supabase_client.record_tracking_event(
+        campaign_id = await supabase_client.record_tracking_event(
             tracking_id,
             "landed",
             {"timestamp": datetime.utcnow().isoformat(), "template_id": template_id},
         )
+
+        if campaign_id:
+            # Update campaign stats
+            stats = await supabase_client.get_campaign_stats(campaign_id)
+            await supabase_client.update_campaign_stats(campaign_id, stats)
 
         # Get landing page template
         landing_template = template_service.get_landing_template(template_id)
@@ -274,7 +279,12 @@ async def phishing_landing_page(template_id: str, tracking_id: str):
             template_id = "generic"
             landing_template = template_service.get_landing_template("generic")
 
-        return HTMLResponse(content=landing_template, status_code=200)
+        # Render the template with context
+        content = landing_template.render(
+            template_id=template_id, tracking_id=tracking_id
+        )
+
+        return HTMLResponse(content=content, status_code=200)
 
     except Exception as e:
         logger.error(f"Error serving landing page: {str(e)}")
