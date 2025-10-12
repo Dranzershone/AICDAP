@@ -207,3 +207,44 @@ class TemplatePersonalization(BaseModel):
     department: str
     company_name: Optional[str] = "Your Organization"
     tracking_urls: Dict[str, str]
+
+
+class URLAnalysisRequest(BaseModel):
+    url: str = Field(..., description="URL to analyze for phishing")
+
+
+class URLAnalysisResponse(BaseModel):
+    url: str
+    is_phishing: bool
+    confidence_score: float = Field(..., ge=0.0, le=1.0)
+    risk_level: str = Field(
+        ..., description="Risk level: low, low-medium, medium, high"
+    )
+    reason: str = Field(..., description="Human-readable explanation")
+    details: Dict[str, Any] = Field(..., description="Additional analysis details")
+    analyzed_at: datetime = Field(default_factory=datetime.now)
+
+
+class URLAnalysisHistory(BaseModel):
+    id: str
+    url: str
+    is_phishing: bool
+    confidence_score: float
+    risk_level: str
+    analyzed_at: datetime
+    user_id: Optional[str] = None
+    ip_address: Optional[str] = None
+
+
+class BulkURLAnalysisRequest(BaseModel):
+    urls: List[str] = Field(
+        ..., max_items=50, description="List of URLs to analyze (max 50)"
+    )
+
+
+class BulkURLAnalysisResponse(BaseModel):
+    results: List[URLAnalysisResponse]
+    total_analyzed: int
+    total_phishing: int
+    total_safe: int
+    analysis_summary: Dict[str, int] = Field(..., description="Summary by risk level")

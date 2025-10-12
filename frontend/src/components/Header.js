@@ -55,6 +55,7 @@ const Header = () => {
   const navigationItems = [
     { label: "Home", path: "/" },
     { label: "About us", path: "/about" },
+    { label: "URL Scanner", path: "/url-scanner" },
     { label: "User guide", path: "/guide" },
     { label: "Pricing", path: "/pricing" },
   ];

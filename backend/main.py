@@ -15,12 +15,17 @@ from dotenv import load_dotenv
 from services.supabase_client import SupabaseClient
 from services.email_service import EmailService
 from services.template_service import TemplateService
+from services.phishing_detector import PhishingDetector
 from models.schemas import (
     CampaignCreate,
     EmailTarget,
     EmailTemplate,
     CampaignResponse,
     TrackingEvent,
+    URLAnalysisRequest,
+    URLAnalysisResponse,
+    BulkURLAnalysisRequest,
+    BulkURLAnalysisResponse,
 )
 
 # Load environment variables
@@ -50,6 +55,7 @@ app.add_middleware(
 supabase_client = SupabaseClient()
 email_service = EmailService()
 template_service = TemplateService()
+phishing_detector = PhishingDetector()
 
 # Mount static files and templates
 templates = Jinja2Templates(directory="templates")
@@ -61,6 +67,7 @@ async def startup_event():
     logger.info("Starting AICDAP Backend...")
     await supabase_client.initialize()
     await email_service.initialize()
+    await phishing_detector.initialize()
     logger.info("AICDAP Backend started successfully")
 
 
@@ -79,6 +86,7 @@ async def health_check():
         "services": {
             "supabase": await supabase_client.health_check(),
             "email": await email_service.health_check(),
+            "phishing_detector": await phishing_detector.health_check(),
         },
     }
 
@@ -357,6 +365,131 @@ async def report_phishing_email(campaign_id: str, tracking_id: str):
     except Exception as e:
         logger.error(f"Error recording email report: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/analyze-url", response_model=URLAnalysisResponse)
+async def analyze_url(request: URLAnalysisRequest):
+    """Analyze a single URL for phishing indicators"""
+    try:
+        logger.info(f"Analyzing URL: {request.url}")
+
+        result = await phishing_detector.analyze_url(request.url)
+
+        # Convert to response model
+        response = URLAnalysisResponse(
+            url=result["url"],
+            is_phishing=result["is_phishing"],
+            confidence_score=result["confidence_score"],
+            risk_level=result["risk_level"],
+            reason=result["reason"],
+            details=result["details"],
+        )
+
+        logger.info(
+            f"URL analysis completed: {request.url} - Risk: {result['risk_level']}"
+        )
+        return response
+
+    except ValueError as e:
+        logger.warning(f"Invalid URL provided: {request.url} - {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Invalid URL: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error analyzing URL {request.url}: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail="Internal server error during URL analysis"
+        )
+
+
+@app.post("/api/analyze-urls/bulk", response_model=BulkURLAnalysisResponse)
+async def analyze_urls_bulk(request: BulkURLAnalysisRequest):
+    """Analyze multiple URLs for phishing indicators"""
+    try:
+        logger.info(f"Analyzing {len(request.urls)} URLs in bulk")
+
+        results = []
+        risk_summary = {"low": 0, "low-medium": 0, "medium": 0, "high": 0}
+        total_phishing = 0
+        total_safe = 0
+
+        for url in request.urls:
+            try:
+                result = await phishing_detector.analyze_url(url)
+
+                response = URLAnalysisResponse(
+                    url=result["url"],
+                    is_phishing=result["is_phishing"],
+                    confidence_score=result["confidence_score"],
+                    risk_level=result["risk_level"],
+                    reason=result["reason"],
+                    details=result["details"],
+                )
+
+                results.append(response)
+
+                # Update counters
+                if result["is_phishing"]:
+                    total_phishing += 1
+                else:
+                    total_safe += 1
+
+                risk_summary[result["risk_level"]] = (
+                    risk_summary.get(result["risk_level"], 0) + 1
+                )
+
+            except Exception as e:
+                logger.error(f"Error analyzing URL {url}: {str(e)}")
+                # Add failed result
+                results.append(
+                    URLAnalysisResponse(
+                        url=url,
+                        is_phishing=False,
+                        confidence_score=0.0,
+                        risk_level="error",
+                        reason=f"Analysis failed: {str(e)}",
+                        details={"error": str(e)},
+                    )
+                )
+
+        bulk_response = BulkURLAnalysisResponse(
+            results=results,
+            total_analyzed=len(request.urls),
+            total_phishing=total_phishing,
+            total_safe=total_safe,
+            analysis_summary=risk_summary,
+        )
+
+        logger.info(
+            f"Bulk URL analysis completed: {total_phishing} phishing, {total_safe} safe"
+        )
+        return bulk_response
+
+    except Exception as e:
+        logger.error(f"Error in bulk URL analysis: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail="Internal server error during bulk URL analysis"
+        )
+
+
+@app.get("/api/url-analysis/stats")
+async def get_url_analysis_stats():
+    """Get URL analysis statistics and detector status"""
+    try:
+        detector_health = await phishing_detector.health_check()
+
+        # You can extend this to include database stats if you store analysis history
+        return {
+            "detector_status": detector_health,
+            "whitelist_domains": len(phishing_detector.whitelist),
+            "current_threshold": phishing_detector.threshold,
+            "model_info": {
+                "loaded": detector_health.get("model_loaded", False),
+                "path": phishing_detector.model_path,
+            },
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting URL analysis stats: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 if __name__ == "__main__":

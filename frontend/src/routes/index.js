@@ -8,6 +8,7 @@ import {
   CampaignBuilder,
   EmployeeManagement,
   Analytics,
+  URLScanner,
 } from "../pages";
 import { Login, SignUp, ForgotPassword } from "../pages/auth";
 import AdminLayout from "../layouts/AdminLayout";
@@ -161,6 +162,17 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/url-scanner"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <URLScanner />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/url-scanner" element={<URLScanner />} />
       <Route
         path="/admin/campaigns"
         element={
