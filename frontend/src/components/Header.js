@@ -173,7 +173,7 @@ const Header = () => {
               color: "text.secondary",
               "&:hover": {
                 color: "text.primary",
-                backgroundColor: "rgba(115, 103, 240, 0.1)",
+                backgroundColor: "rgba(255, 107, 53, 0.1)",
               },
             }}
           >
@@ -233,9 +233,9 @@ const Header = () => {
       position="fixed"
       elevation={0}
       sx={{
-        backgroundColor: "rgba(23, 23, 37, 0.95)",
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
         backdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+        borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
       }}
     >
       <Container maxWidth="lg">
@@ -270,11 +270,11 @@ const Header = () => {
                     size="medium"
                     onClick={() => navigate("/signup")}
                     sx={{
-                      borderColor: "rgba(255, 255, 255, 0.3)",
-                      color: "text.primary",
+                      borderColor: "rgba(255, 107, 53, 0.5)",
+                      color: "primary.main",
                       "&:hover": {
-                        borderColor: "rgba(255, 255, 255, 0.5)",
-                        backgroundColor: "rgba(255, 255, 255, 0.05)",
+                        borderColor: "rgba(255, 107, 53, 0.8)",
+                        backgroundColor: "rgba(255, 107, 53, 0.05)",
                       },
                     }}
                   >
@@ -286,12 +286,12 @@ const Header = () => {
                     onClick={() => navigate("/login")}
                     sx={{
                       background:
-                        "linear-gradient(135deg, #7367f0 0%, #5a4ed4 100%)",
-                      boxShadow: "0 4px 12px rgba(115, 103, 240, 0.3)",
+                        "linear-gradient(135deg, #ff6b35 0%, #e64a19 100%)",
+                      boxShadow: "0 4px 12px rgba(255, 107, 53, 0.3)",
                       "&:hover": {
                         background:
-                          "linear-gradient(135deg, #8b7ff5 0%, #6b5dd6 100%)",
-                        boxShadow: "0 6px 16px rgba(115, 103, 240, 0.4)",
+                          "linear-gradient(135deg, #ff8a65 0%, #ff5722 100%)",
+                        boxShadow: "0 6px 16px rgba(255, 107, 53, 0.4)",
                       },
                     }}
                   >

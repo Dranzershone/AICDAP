@@ -13,6 +13,7 @@ import {
 import { Login, SignUp, ForgotPassword } from "../pages/auth";
 import AdminLayout from "../layouts/AdminLayout";
 import ProtectedRoute from "../components/ProtectedRoute";
+import DemoPage from "../pages/demo/DemoPage";
 
 // Placeholder components for routes that don't have pages yet
 const UserGuide = () => (
@@ -44,6 +45,7 @@ const AppRoutes = () => {
       <Route path="/about" element={<About />} />
       <Route path="/guide" element={<UserGuide />} />
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/demo" element={<DemoPage />} />
       <Route
         path="/login"
         element={
